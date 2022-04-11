@@ -1,0 +1,62 @@
+version: '3.8'
+services:
+  zookeeper:
+    container_name: zookeeper
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+  kafka:
+    container_name: kafka
+    image: wurstmeister/kafka
+    ports:
+      - "9092:9092"
+    volumes:
+      - ./data/kafka:/var/run/docker.sock
+    environment:
+      - KAFKA_ADVERTISED_HOST_NAME=kafka
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+  postgres:
+    container_name: postgres
+    image: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+  profileservice:
+    container_name: profileservice
+    build: ./profileService
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./profileservice:/app
+    environment:
+      - PORT=8080
+      - POSTGRES_URL=postgres://postgres:postgres@postgres:5432/postgres
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_TOPIC=test5
+    depends_on:
+      - postgres
+      - kafka
+  notificationservice:
+    container_name: notificationservice
+    build: ./notificationService
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./notificationservice:/app
+    environment:
+      - PORT=8081
+      - POSTGRES_URL=postgres://postgres:postgres@postgres:5432/postgres
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_TOPIC=test5
+      - EMAIL=codingtest007@gmail.com
+      - PASSWORD=Coding@12345
+    depends_on:
+      - postgres
+      - kafka
